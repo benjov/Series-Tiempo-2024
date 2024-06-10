@@ -1,0 +1,300 @@
+---
+title: "Aplicacion ARCH(q) y GARCH(p,q)"
+author: "Benjamin Oliva & Omar Alfaro-Rivera"
+date: "23/11/2022"
+output: html_document
+---
+
+```{r, include=FALSE, message=FALSE, warning=FALSE}
+#install.packages("dynlm")
+#install.packages("moments")
+#install.packages("broom")
+#install.packages("FinTS")
+#install.packages('rugarch')
+#install.packages("tsbox")
+#install.packages("metRology")
+#install.packages("expm")
+#install.packages("MTS")
+#install.packages("rmgarch")
+#install.packages("Rcpp")
+library(expm)
+library(Matrix)
+library(ggplot2)
+library(quantmod)
+library(moments)
+library(dynlm)
+library(broom)
+library(FinTS)
+library(lubridate)
+library(forecast)
+library(readxl)
+library(MASS)
+library(rugarch)
+library(tsbox)
+library(MTS)
+library(rmgarch)
+library(Rcpp)
+```
+
+## Librería __Quantmod__
+
+Para el análisis de temas financieros existe una librería de mucha utilidad llamada __quantmod__. En primer lugar esta librería permite acceder a datos financieros de un modo muy simple, es posible decargar series financieras desde _yahoo_, la _FRED (Federal Reserve Economic Data)_, _google_, etc. Por otro lado también es una librería que permite realizar gráficos altamente estéticos con unas cuantas líneas de código. 
+
+```{r}
+
+options("getSymbols.warning4.0"=FALSE)
+
+BTC <-getSymbols("BTC-USD", src = "yahoo", auto.assign = FALSE)
+
+BTC <- na.omit(BTC)
+
+chartSeries(BTC,TA='addBBands();
+                    addBBands(draw="p");
+                    addVo();
+                    addMACD()', 
+                  
+              subset='2021',
+                theme="white")
+
+head(BTC)
+```
+
+Para fines del ejercicio de esta clase, usaremos el valor de la acción ajustado. Esto nos servirá para calcular el rendimiento diario, o puesto en lenguaje de series temporales podemos decir que usaremos la serie en diferencias logarítmicas. 
+
+```{r}
+plot(BTC$`BTC-USD.Adjusted`)
+```
+
+Una de las preguntas relevantes al observar la serie en diferencias, es si podríamos afirmar que esta serie cumple con el supuesto de homoscedasticidad. 
+```{r}
+logret <- ts(diff(log(BTC$`BTC-USD.Adjusted`))[-1])
+
+plot(logret)
+```
+
+## Value at risk
+
+El Valor en Riesgo, básicamente es un cálculo que nos permite estimar el monto que una acción o portafolio podría perder dada una probabilidad $(1-\alpha)$
+
+```{r message=FALSE, warning=FALSE}
+alpha <- 0.05
+VaR <- quantile(logret, alpha)
+
+round(VaR, 4)*100
+
+qplot(logret , geom = 'histogram') + geom_histogram(fill = 'lightblue' , bins = 30) +
+  geom_histogram(aes(logret[logret < quantile(logret , 0.05)]) , fill = 'red' , bins = 30) +
+  labs(x = 'Daily Returns')
+
+```
+
+```{r message=FALSE, warning=FALSE}
+
+normal_dist <- rnorm(100000, mean(logret), sd(logret))
+VaR_n <- quantile(normal_dist, 0.05)
+ES_n <- mean(normal_dist[normal_dist<VaR])
+  
+ggplot()+
+  geom_density(aes(logret, geom ='density', col = 'returns'))+
+  geom_density(aes(normal_dist, col = 'normal'))
+
+```
+
+
+```{r warning=FALSE}
+
+vector_ret <- as.vector(logret)
+
+##Kurtosis
+round(kurtosis(vector_ret),2)
+##Sesgo
+round(skewness(vector_ret),2)
+
+```
+
+$H_o: K=S=0$
+
+```{r}
+##Prueba de normalidad 
+jarque.test(vector_ret)
+```
+
+# ARCH 
+
+Hasta ahora las distribuciones utilizadas para medir el Valor en Riesgo de este activo, asumen que no existe correlación serial en los retornos diarios de este activo. Observemos un par de gráficas de la función de autocorrelación para corroborar este hecho. 
+
+```{r}
+plot(logret)
+acf(logret)
+```
+
+La idea de clusterización de volatilidad, asume que periodos de alta volatilidad serán seguidos por una alta volatilidad y viceversa. Por esta razón la función de autocorrelación útil para saber si existen clusters de volatilidad es utilizando el valor absoluto, ya que lo que importa es saber si la serie está autocorrelacionada en la magnitud de los movimientos. 
+
+```{r}
+plot(abs(logret))
+acf(abs(logret))
+```
+
+
+Otra manera de corroborar esta idea es volviendo IID nuestra serie de datos y observar que de este modo se pierde la autocorrelación serial, lo que refuerza la idea de que en esta serie existen clusters de volatilidad. 
+
+```{r}
+logret_random <- sample(as.vector(logret), size =  length(logret), replace = FALSE)
+
+acf(abs(logret_random))
+
+par(mfrow = c(1,2))
+plot(logret)
+plot(logret_random, type = 'l')
+```
+
+Primer enfoque para comprobar aceptar o rechazar la hopótesis de que necesitamos estimar un ARCH(q)
+
+```{r}
+logret_mean = dynlm(logret~1)
+
+summary(logret_mean)
+
+ehatsq = ts(resid(logret_mean)^2)
+
+ARCH_m = dynlm(ehatsq~L(ehatsq))
+
+summary(ARCH_m)
+
+
+acf(ARCH_m$residuals)
+acf(abs(ARCH_m$residuals))
+
+ArchTest(logret, lags = 1, demean = TRUE)
+```
+
+### ARCH(1)
+
+$Y_t = \mu+\sqrt{h_t}\varepsilon_t$
+
+$h_t = \omega+\alpha_ih_{t-i}+u_t$
+
+$\varepsilon$~$N(0,1)$
+
+```{r}
+
+library(rugarch)
+
+auto.arima(logret)
+
+#?ugarchspec
+
+model.spec = ugarchspec( variance.model = list(model = 'sGARCH' , garchOrder = c(1, 0)), 
+                        mean.model = list(armaOrder = c(2,0)), distribution.model = "std")
+
+#?ugarchfit
+
+arch.fit = ugarchfit(spec = model.spec , data = logret, solver = 'solnp')
+
+arch.fit@fit$matcoef
+
+boot.garch <- ugarchboot(arch.fit,
+                         method = "Partial",
+                         sampling = "raw",  #bootstrap from fitted varepsilon
+                         n.ahead = 1,          #simulation horizon
+                         n.bootpred = 100000, #number of simulations 
+                         solver = "solnp")
+
+boot.garch
+
+```
+
+## GARCH(0,1)
+
+$Y_t = \mu+\sqrt{h_t}\varepsilon_t$
+
+$h_t = \omega+\beta_ih^2_{t-i}+u_t$
+
+$\varepsilon$~$N(0,1)$
+
+
+```{r}
+model.spec = ugarchspec(variance.model = list(model = 'sGARCH' , garchOrder = c(0,1)), 
+                        mean.model = list(armaOrder = c(2,0)), distribution.model = "std")
+
+fit.garch.n = ugarchfit(spec = model.spec, data = logret, solver = "solnp")
+
+fit.garch.n@fit$matcoef
+
+boot.garch <- ugarchboot(fit.garch.n,
+                         method = "Partial",
+                         sampling = "raw",  #bootstrap from fitted varepsilon
+                         n.ahead = 1,          #simulation horizon
+                         n.bootpred = 100000, #number of simulations 
+                         solver = "solnp")
+boot.garch
+
+```
+
+### Selección GARCH(p,q) óptimo
+
+$Y_t = \mu+\sqrt{h_t}\varepsilon_t$
+
+$h_t = \omega+\beta_ih_{t-i}+\alpha_i\varepsilon^2_{t-i}+u_t$
+
+$\varepsilon$~$N(0,1)$
+
+
+```{r}
+#Criterios de información 
+
+infocriteria(fit.garch.n)
+
+
+#Selección del modelo óptimo
+
+source("Lag_Opt_GARCH.R")
+
+Lag_Opt_GARCH(ehatsq,4,4)
+
+```
+
+```{r}
+
+# Estimación de modelo óptimo 
+
+model.spec = ugarchspec(variance.model = list(model = 'sGARCH' , garchOrder = c(4,2)), 
+                        mean.model = list(armaOrder = c(2,0)), distribution.model = "std")
+
+
+model.fit = ugarchfit(spec = model.spec , data = logret, solver = 'solnp')
+
+model.fit@fit$matcoef
+
+
+boot.garch <- ugarchboot(model.fit,
+                         method = "Partial",
+                         sampling = "raw",  #bootstrap from fitted varepsilon
+                         n.ahead = 1,          #simulation horizon
+                         n.bootpred = 100000, #number of simulations 
+                         solver = "solnp")
+
+boot.garch
+
+```
+
+### Forecasting with GARCH(1,1)
+
+Para realizar pronósticos con la estimación de un GARCH, utilizando la librería _rugarch_, es necesario utilizar la función __ugarchforecast()__. 
+
+```{r}
+model.spec = ugarchspec(variance.model = list(model = 'sGARCH' , garchOrder = c(1,1)), 
+                        mean.model = list(armaOrder = c(4,2)), distribution.model = "std")
+model.fit = ugarchfit(spec = model.spec , data = logret, solver = 'solnp')
+spec = getspec(model.fit)
+setfixed(spec) <- as.list(coef(model.fit))
+```
+
+Esta función precisa como argumentos nuestra estimación del modelo GARCH, con una modificación en la manera en que se presentan los coeficientes, realizada en la última línea del código anterior y que llamamos _spec_. _n.ahead_ es el número de periodos que vamos a pronosticar, _n.roll_ señala el número de pronósticos móviles que utilizaremos, en caso de que haya más información para realizar el pronóstico. Finalmente damos como input nuestro set de datos y como producto obtendremos el pronostico de Sigma tanto como de la serie.
+
+```{r}
+forecast = ugarchforecast(spec, n.ahead = 12, n.roll = 0, logret)
+sigma(forecast)
+fitted(forecast)
+forecast
+```
