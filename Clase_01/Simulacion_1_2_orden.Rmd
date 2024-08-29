@@ -1,7 +1,7 @@
 ---
 title: "Introduccion. Simulacion de procesos de ecuaciones de primer y segundo orden"
 author: "Benjamin Oliva & Omar Alfaro-Rivera"
-date: "13/9/2023"
+date: "27/8/2024"
 output: html_document
 ---
 
@@ -52,14 +52,14 @@ ggplot(data = Diff_Eq,
   theme(plot.caption = element_text(hjust = 0)) +
   theme(plot.margin = unit(c(1,1,1,1), "cm")) 
 
-#ggsave("G1_PROC_01.png", width = 20, height = 10, units = "cm")
+ggsave("G1_PROC_01.png", width = 20, height = 10, units = "cm")
 ```
 
 ```{r}
 ggplot(data = Diff_Eq, 
        aes(x = Tiempo, y = Process_2)) + 
-  geom_line(linewidth = 0.5, color = "red") +
-  geom_point(size = 1.0, color = "red") + 
+  geom_line(linewidth = 0.5, color = "darkred") +
+  geom_point(size = 1.0, color = "darkred") + 
   #theme_bw() + 
   theme(legend.position = "none") +
   theme(legend.title = element_blank()) +

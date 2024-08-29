@@ -4,7 +4,7 @@
 #****************************************************************************************
 getwd()
 # Cambiar la siguiente ruta dependiendo de la ubicación en sus equipos
-setwd("/Users/benjamin/Library/Mobile Documents/com~apple~CloudDocs/Documents/Personal/Cursos_UNAM/SERIES_2024-I/Series-Tiempo-2023/Clase_00")
+setwd("/Users/benjamin/Documents/Personal/Cursos_UNAM/SERIES_2025-I/Series-Tiempo-2024/Clase_00")
 
 getwd()
 
@@ -22,8 +22,8 @@ library(readxl)
 Base_1 <- read_excel("Base_1_TimeSeries.xlsx", sheet = "Hoja 1", col_names = TRUE)
 
 # Los datos importados son:
-# IGAE_2013:      Indicador global de la actividad economica, base 2013
-# IGAE_PRIM_2013: Indicador global de la actividad economica, base 2013, Actividades primarias
+# IGAE_2018:      Indicador global de la actividad economica, base 2018
+# IGAE_PRIM_2018: Indicador global de la actividad economica, base 2018, Actividades primarias
 # ICC:            Indice de confianza del consumidor, puntos
 # ICC_LAG:        Indice de confianza del consumidor, comparada con la situacion economica, puntos
 #                 que los miembros del hogar tenian hace 12 meses 
@@ -44,8 +44,8 @@ names(Base_1)
 #****************************************************************************************
 # Declaramos las base de datos que se acaba de importar como varias series de tiempo:
 
-IGAE_2013 <- ts(Base_1$IGAE_2013, start = 2002, freq = 12)
-IGAE_PRIM_2013 <- ts(Base_1$IGAE_PRIM_2013, start = 2002, freq = 12) 
+IGAE_2018 <- ts(Base_1$IGAE_2018, start = 2002, freq = 12)
+IGAE_PRIM_2018 <- ts(Base_1$IGAE_PRIM_2018, start = 2002, freq = 12) 
 ICC <- ts(Base_1$ICC, start = 2002, freq = 12)
 ICC_LAG <- ts(Base_1$ICC_LAG, start = 2002, freq = 12)
 IPC_BMV <- ts(Base_1$IPC_BMV, start = 2002, freq = 12)
@@ -55,17 +55,17 @@ TDC <- ts(Base_1$TDC, start = 2002, freq = 12)
 # Graficas de clase
 
 # GRAFICA 1
-summary(IGAE_2013, digits = 4)
+summary(IGAE_2018, digits = 4)
 
-summary(IGAE_PRIM_2013, digits = 4)
+summary(IGAE_PRIM_2018, digits = 4)
 
 png("G1_IGAE.jpg",  width = 900)
-# Indicador Global de la Actividad Economica, base 2013
-plot(IGAE_2013, type = "l", lwd = 1, col = "red", ylab = "Indice", xlab = "Tiempo", ylim = c(60,160)) 
+# Indicador Global de la Actividad Economica, base 2018
+plot(IGAE_2018, type = "l", lwd = 1, col = "red", ylab = "Índice", xlab = "Tiempo", ylim = c(60,150)) 
 # Comando que indica a R que, sin borrar la grafica anterior, grafique la siguiente:
 par(new = T) 
 # Indicador Global de la Actividad Econ?mica, Actividades Primarias, base 2008
-plot(IGAE_PRIM_2013, type = "l", lwd = 1, col = "blue", ylab = "Indice", xlab = "Tiempo", ylim = c(60,160))
+plot(IGAE_PRIM_2018, type = "l", lwd = 1, col = "blue", ylab = "Indice", xlab = "Tiempo", ylim = c(60,150))
 # Leyenda
 legend("topleft", c("IGAE","IGAE Act. Prim."), cex = 0.8, lty = 1:1, col = c("red", "blue"))
 par(new = F)
@@ -80,11 +80,11 @@ summary(ICC_LAG, digits = 4)
 
 png("G2_ICC.jpg",  width = 900)
 # Indice de confianza del Consumidor, base enero 2003
-plot(ICC, type = "l", lwd = 1, col = "red", ylab = "Indice", xlab = "Tiempo", ylim = c(29, 50))
+plot(ICC, type = "l", lwd = 1, col = "red", ylab = "Indice", xlab = "Tiempo", ylim = c(29, 55))
 # Comando que indica a R que sin borrar la grafica anterior, grafique la siguiente.
 par(new = T) 
 # Indice ??Como considera usted la situacion economica del pais hoy en dia comparada con la de hace 12 meses?, base enero 2003
-plot(ICC_LAG, type = "l", lwd = 1, col = "blue", ylab = "Indice", xlab = "Tiempo", ylim = c(29,50))
+plot(ICC_LAG, type = "l", lwd = 1, col = "blue", ylab = "Indice", xlab = "Tiempo", ylim = c(29,55))
 # Leyenda
 legend("bottomleft", c("ICC","ICC lag"), cex = 0.8, lty = 1:1, col = c("red", "blue"))
 par(new = F)
@@ -116,11 +116,11 @@ summary(TDC_I, digits = 4)
 
 png("G4_IPC_TDC_I.jpg",  width = 900)
 # Indice del indice de Precios y Cotizaciones de la Bolsa Mexicana de Valores
-plot(IPC_BMV_I, type = "l", lwd = 1, col = "red", ylab = "Indice", xlab = "Tiempo", ylim = c(80,740))
+plot(IPC_BMV_I, type = "l", lwd = 1, col = "red", ylab = "Indice", xlab = "Tiempo", ylim = c(80,820))
 # Comando que indica a R que sin borrar la grafica anterior, grafique la siguiente.
 par(new = T)
 # Indice del Tipo de Cambio para Solventar Obligaciones en Moneda Extranjera
-plot(TDC_I, type = "l", lwd = 1, col = "blue", ylab = "Indice", xlab = "Tiempo", ylim = c(80,740))
+plot(TDC_I, type = "l", lwd = 1, col = "blue", ylab = "Indice", xlab = "Tiempo", ylim = c(80,820))
 # Leyenda
 legend("topleft", c("Indice del IPC","Indice del TDC"), cex = 0.8, lty = 1:1, col = c("red", "blue"))
 par(new = F)
@@ -133,7 +133,7 @@ dev.off()
 png("G5_DIFF_LOG.jpg")
 par(mfrow=c(3,1))
 # Indicador Global de la Actividad Econ?mica, base 2008
-plot(diff(log(IGAE_2013), lag = 1), type = "l", lwd = 1, col = "red", ylab = "Var. %", xlab = "Tiempo", main = "Indicador Global de la Actividad Economica") 
+plot(diff(log(IGAE_2018), lag = 1), type = "l", lwd = 1, col = "red", ylab = "Var. %", xlab = "Tiempo", main = "Indicador Global de la Actividad Economica") 
 # Indice de Precios y Cotizaciones de la Bolsa Mexicana de Valores
 plot(diff(log(IPC_BMV), lag = 1), type = "l", lwd = 1, col = "darkgreen", ylab = "Var. %", xlab = "Tiempo", main = "Indice de Precios y Cotizaciones BMV")
 # Tipo de Cambio para Solventar Obligaciones en Moneda Extranjera

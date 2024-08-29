@@ -1,7 +1,7 @@
 ---
 title: "Clase 2. Simulaciones Estocásticas"
 author: "Benjamin Oliva & Omar Alfaro-Rivera"
-date: "13/9/2023"
+date: "27/8/2024"
 output: html_document
 ---
 
