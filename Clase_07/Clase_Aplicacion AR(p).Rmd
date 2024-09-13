@@ -101,7 +101,7 @@ par(mfrow=c(1,1))
 
 # AR(p) en NIVELES:
 
-AR_LPax_Int <- arima(LPax_Int, order = c(4, 0, 0), method = "ML")
+AR_LPax_Int <- arima(LPax_Int, order = c(6, 0, 0), method = "ML")
 
 AR_LPax_Int
 
@@ -116,7 +116,7 @@ AR(p) en DIFERENCIAS:
 
 ```{r}
 
-AR_DLPax_Int <- arima(DLPax_Int, order = c(4, 0, 0), method = "ML")
+AR_DLPax_Int <- arima(DLPax_Int, order = c(8, 0, 0), method = "ML")
 
 AR_DLPax_Int
 
@@ -133,11 +133,11 @@ plot.armaroots(arroots(AR_DLPax_Int),
 
 ```{r}
 
-pacf(LPax_Int[1:234], lag.max = 14,
+pacf(LPax_Int[1:294], lag.max = 20,
      main = "Función de Autocorrelación Parcial de pasajeros en vuelos internacionales de salida",
      xlab = 'Rezagos en k meses')
 
-pacf(DLPax_Int[2:234], lag.max = 14, 
+pacf(DLPax_Int[2:294], lag.max = 20, 
      main = "Función de Autocorrelación Parcial de pasajeros en vuelos internacionales de salida",
      xlab = 'Rezagos en k meses')
 
