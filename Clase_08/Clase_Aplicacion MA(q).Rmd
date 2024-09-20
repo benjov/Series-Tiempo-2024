@@ -202,6 +202,9 @@ plot.armaroots(maroots(MA_LPax_Metro),
 MA_LPax_Metro_2 <- arima(LPax_Metro, order = c(0, 0, 4),
                        xreg = cbind(D_Abr2020, D_Sep2017, D_May2020),
                        method = "ML")
+# MA_LPax_Metro_2 <- arima(DLPax_Metro, order = c(0, 0, 4),
+#                        xreg = cbind(D_Abr2020, D_Sep2017, D_May2020),
+#                        method = "ML")
 
 MA_LPax_Metro_2
 

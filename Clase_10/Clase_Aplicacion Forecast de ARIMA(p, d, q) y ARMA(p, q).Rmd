@@ -226,8 +226,8 @@ Pronostico_Arima <- read_excel("Pronostico_Arima.xlsx", sheet = "Datos", col_nam
 Pronostico_Arima$Pax_Nal_f <- Pronostico_Arima$Pax_Nal
 
 for(i in 1:24){
-  Pronostico_Arima$Pax_Nal_f[281 + i] <- 
-    Pronostico_Arima$Pax_Nal_f[281 + i - 1]*(1 + DLPax_Nal_f$pred[i])
+  Pronostico_Arima$Pax_Nal_f[294 + i] <- 
+    Pronostico_Arima$Pax_Nal_f[294 + i - 1]*(1 + DLPax_Nal_f$pred[i])
 }
 
 View(Pronostico_Arima)
