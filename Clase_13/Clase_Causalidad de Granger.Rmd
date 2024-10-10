@@ -264,3 +264,7 @@ grangertest(DLTC ~ DLCETE28, order = 16, data = Datos)
 grangertest(DLCETE28 ~ DLTC, order = 16, data = Datos)
 
 ```
+
+
+
+

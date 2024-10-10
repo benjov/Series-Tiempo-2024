@@ -1,7 +1,7 @@
 ---
 title: "Clase 14. VAR(p)"
 author: "Benjamin Oliva & Omar Alfaro-Rivera"
-date: "27/10/2023"
+date: "08/10/2024"
 output: html_document
 editor_options: 
   chunk_output_type: inline
@@ -176,10 +176,11 @@ VAR(Datos, p = 4)
 ### VAR y sus componenetes
 ```{r }
 
-VAR01 <- VAR(Datos, p = 4, type = "none")
+VAR01 <- VAR(Datos, p = 4, type = "both")
 
 names(VAR01)
 
+VAR01
 ```
 
 ```{r }
@@ -205,7 +206,7 @@ roots(VAR01)
 ### type = "both"
 ```{r }
 
-VARselect(Datos, lag.max = 12, type = "both")
+VARselect(Datos, lag.max = 12, type = "const")
 
 ```
 
