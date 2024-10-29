@@ -1,7 +1,7 @@
 ---
 title: "Clase 15. VAR(p) - Analisis de Impulso-Respuesta"
 author: "Benjamin Oliva & Omar Alfaro-Rivera"
-date: "27/10/2021"
+date: "10/10/2021"
 output: html_document
 editor_options: 
   chunk_output_type: inline
@@ -166,7 +166,7 @@ serial.test(VAR_p, lags.bg = 6, type = "BG")
 #### Homocedasticidad:
 ```{r }
 
-arch.test(VAR_p, lags.multi = 6)
+arch.test(VAR_p, lags.multi = 2)
 
 ```
 

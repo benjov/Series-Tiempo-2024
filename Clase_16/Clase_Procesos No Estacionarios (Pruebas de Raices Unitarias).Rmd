@@ -1,7 +1,7 @@
 ---
 title: "Clase 16. Procesos No Estacionarios (Pruebas de Raices Unitarias)"
 author: "Benjamin Oliva & Omar Alfaro-Rivera"
-date: "7/11/2021"
+date: "15/10/2024"
 output: html_document
 editor_options: 
   chunk_output_type: inline
