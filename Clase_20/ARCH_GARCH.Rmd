@@ -1,11 +1,11 @@
 ---
 title: "Aplicacion ARCH(q) y GARCH(p,q)"
 author: "Benjamin Oliva & Omar Alfaro-Rivera"
-date: "23/11/2022"
+date: "23/11/2024"
 output: html_document
 ---
 
-```{r, include=FALSE, message=FALSE, warning=FALSE}
+```{r, include=FALSE}
 #install.packages("dynlm")
 #install.packages("moments")
 #install.packages("broom")
@@ -35,7 +35,6 @@ library(MTS)
 library(rmgarch)
 library(Rcpp)
 ```
-
 ## Librería __Quantmod__
 
 Para el análisis de temas financieros existe una librería de mucha utilidad llamada __quantmod__. En primer lugar esta librería permite acceder a datos financieros de un modo muy simple, es posible decargar series financieras desde _yahoo_, la _FRED (Federal Reserve Economic Data)_, _google_, etc. Por otro lado también es una librería que permite realizar gráficos altamente estéticos con unas cuantas líneas de código. 
@@ -53,7 +52,7 @@ chartSeries(BTC,TA='addBBands();
                     addVo();
                     addMACD()', 
                   
-              subset='2021',
+              subset='2024',
                 theme="white")
 
 head(BTC)
@@ -80,7 +79,7 @@ El Valor en Riesgo, básicamente es un cálculo que nos permite estimar el monto
 alpha <- 0.05
 VaR <- quantile(logret, alpha)
 
-round(VaR, 4)*100
+round(VaR, 4)
 
 qplot(logret , geom = 'histogram') + geom_histogram(fill = 'lightblue' , bins = 30) +
   geom_histogram(aes(logret[logret < quantile(logret , 0.05)]) , fill = 'red' , bins = 30) +
@@ -89,7 +88,6 @@ qplot(logret , geom = 'histogram') + geom_histogram(fill = 'lightblue' , bins = 
 ```
 
 ```{r message=FALSE, warning=FALSE}
-
 normal_dist <- rnorm(100000, mean(logret), sd(logret))
 VaR_n <- quantile(normal_dist, 0.05)
 ES_n <- mean(normal_dist[normal_dist<VaR])
@@ -97,19 +95,16 @@ ES_n <- mean(normal_dist[normal_dist<VaR])
 ggplot()+
   geom_density(aes(logret, geom ='density', col = 'returns'))+
   geom_density(aes(normal_dist, col = 'normal'))
-
 ```
 
 
 ```{r warning=FALSE}
-
 vector_ret <- as.vector(logret)
 
 ##Kurtosis
 round(kurtosis(vector_ret),2)
 ##Sesgo
 round(skewness(vector_ret),2)
-
 ```
 
 $H_o: K=S=0$
@@ -117,6 +112,36 @@ $H_o: K=S=0$
 ```{r}
 ##Prueba de normalidad 
 jarque.test(vector_ret)
+```
+
+## Calcular VaR para una distribución t
+
+Como sabemos la distribución normal es un caso particular de la distribución t de student, correspondiente a un caso en el que los Grados de Libertad (_df_) tienden a infinito. Mediante el método de máxima verosimilitud nos aproximamos a una distribución t de student que describe mejor el comportamiento de los retornos de este activo. 
+
+```{r message=FALSE, warning=FALSE}
+t.fit <-fitdistr(vector_ret, "t")
+round(t.fit$estimate, 6)
+
+#install.packages("metRology")
+library(metRology)
+alpha <- 0.05
+set.seed(1289)
+rvec <- rt.scaled(length(logret), mean=t.fit$estimate[1],
+                  sd = t.fit$estimate[2],
+                  df = t.fit$estimate[3])
+
+VaR <- quantile(rvec, alpha)
+round(VaR, 6)
+
+```
+
+```{r}
+ggplot()+
+  geom_density(aes(logret, geom ='density', col = 'returns'))+
+  geom_density(aes(normal_dist, col = 'normal'))+
+    geom_density(aes(rvec, col = 't_simulated'))
+
+
 ```
 
 # ARCH 
@@ -128,18 +153,16 @@ plot(logret)
 acf(logret)
 ```
 
-La idea de clusterización de volatilidad, asume que periodos de alta volatilidad serán seguidos por una alta volatilidad y viceversa. Por esta razón la función de autocorrelación útil para saber si existen clusters de volatilidad es utilizando el valor absoluto, ya que lo que importa es saber si la serie está autocorrelacionada en la magnitud de los movimientos. 
-
+La idea de clusterización de volatilidad, asume que periodos de alta volatilidad serán seguidos por una alta volatilidad y viceversa. Por esta razón la función de autocorrelación útil para saber si existen clusters de volatilidad, es utilizando el valor absoluto, ya que lo que importa es saber si la serie está autocorrelacionada en la magnitud de los movimientos. 
 ```{r}
-plot(abs(logret))
 acf(abs(logret))
 ```
 
 
-Otra manera de corroborar esta idea es volviendo IID nuestra serie de datos y observar que de este modo se pierde la autocorrelación serial, lo que refuerza la idea de que en esta serie existen clusters de volatilidad. 
+Otra manera de corroborar esta idea, es volviendo IID nuestra serie de datos y observar que de este modo se pierde la autocorrelación serial, lo que refuerza la idea de que en esta serie existen clusters de volatilidad. 
 
 ```{r}
-logret_random <- sample(as.vector(logret), size =  length(logret), replace = FALSE)
+logret_random <- sample(as.vector(logret),size =  length(logret), replace = FALSE)
 
 acf(abs(logret_random))
 
@@ -147,7 +170,6 @@ par(mfrow = c(1,2))
 plot(logret)
 plot(logret_random, type = 'l')
 ```
-
 Primer enfoque para comprobar aceptar o rechazar la hopótesis de que necesitamos estimar un ARCH(q)
 
 ```{r}
@@ -172,22 +194,17 @@ ArchTest(logret, lags = 1, demean = TRUE)
 
 $Y_t = \mu+\sqrt{h_t}\varepsilon_t$
 
-$h_t = \omega+\alpha_ih_{t-i}+u_t$
+$h_t = \omega+\alpha_i\varepsilon^2_{t-i}+u_t$
 
 $\varepsilon$~$N(0,1)$
 
 ```{r}
-
 library(rugarch)
 
 auto.arima(logret)
 
-#?ugarchspec
-
-model.spec = ugarchspec( variance.model = list(model = 'sGARCH' , garchOrder = c(1, 0)), 
+model.spec = ugarchspec(variance.model = list(model = 'sGARCH' , garchOrder = c(1, 0)), 
                         mean.model = list(armaOrder = c(2,0)), distribution.model = "std")
-
-#?ugarchfit
 
 arch.fit = ugarchfit(spec = model.spec , data = logret, solver = 'solnp')
 
@@ -200,8 +217,21 @@ boot.garch <- ugarchboot(arch.fit,
                          n.bootpred = 100000, #number of simulations 
                          solver = "solnp")
 
-boot.garch
+## VaR estimado mediante ARCH
+rvec <- boot.garch@fseries
+alpha <- 0.05
+VaR <- quantile(rvec, alpha)
+round(VaR,6)
 
+F_inv = qt(0.05, t.fit$estimate[3])
+
+tiempo= time(BTC[-1])
+
+ggplot()+
+  geom_point(aes(y = logret,x = tiempo),colour = 'lightgrey' , size = 2) + 
+  geom_line(aes(y = arch.fit@fit$sigma*(F_inv), x = tiempo), colour = 'red') +
+  geom_hline(yintercept = sd(logret)*qnorm(0.05) , colour = 'darkgreen' , size = 1.2) + theme_light() + 
+  labs(x = '' , y = 'Daily Returns' , title = 'Value at Risk Comparison')
 ```
 
 ## GARCH(0,1)
@@ -218,7 +248,6 @@ model.spec = ugarchspec(variance.model = list(model = 'sGARCH' , garchOrder = c(
                         mean.model = list(armaOrder = c(2,0)), distribution.model = "std")
 
 fit.garch.n = ugarchfit(spec = model.spec, data = logret, solver = "solnp")
-
 fit.garch.n@fit$matcoef
 
 boot.garch <- ugarchboot(fit.garch.n,
@@ -227,7 +256,21 @@ boot.garch <- ugarchboot(fit.garch.n,
                          n.ahead = 1,          #simulation horizon
                          n.bootpred = 100000, #number of simulations 
                          solver = "solnp")
-boot.garch
+
+rvec <- boot.garch@fseries
+alpha <- 0.05
+VaR <- quantile(rvec, alpha)
+VaR
+
+F_inv = qt(0.05, t.fit$estimate[3])
+
+tiempo= time(BTC[-1])
+
+ggplot()+
+  geom_point(aes(y = logret,x = tiempo),colour = 'lightgrey' , size = 2) + 
+  geom_line(aes(y = fit.garch.n@fit$sigma*(F_inv), x = tiempo), colour = 'red') +
+  geom_hline(yintercept = sd(logret)*qnorm(0.05) , colour = 'darkgreen' , size = 1.2) + theme_light() + 
+  labs(x = '' , y = 'Daily Returns' , title = 'Value at Risk Comparison')
 
 ```
 
@@ -251,7 +294,6 @@ infocriteria(fit.garch.n)
 source("Lag_Opt_GARCH.R")
 
 Lag_Opt_GARCH(ehatsq,4,4)
-
 ```
 
 ```{r}
@@ -274,9 +316,38 @@ boot.garch <- ugarchboot(model.fit,
                          n.bootpred = 100000, #number of simulations 
                          solver = "solnp")
 
-boot.garch
+## VaR estimado mediante GARCH óptimo
+rvec <- boot.garch@fseries
+alpha <- 0.05
+VaR <- quantile(rvec, alpha)
+VaR
+
+F_inv = qt(0.05, t.fit$estimate[3])
+
+tiempo= time(BTC[-1])
+
+ggplot()+
+  geom_point(aes(y = logret,x = tiempo),colour = 'lightgrey' , size = 2) + 
+  geom_line(aes(y = model.fit@fit$sigma*(F_inv), x = tiempo), colour = 'red
+            ') +
+  geom_hline(yintercept = sd(logret)*qnorm(0.05) , colour = 'darkgreen' , size = 1.2) + theme_light() + 
+  labs(x = '' , y = 'Daily Returns' , title = 'Value at Risk Comparison')
 
 ```
+
+### Comparativo entre cálculos 
+
+```{r}
+ggplot()+
+  geom_point(aes(y = logret,x = tiempo),colour = 'lightgrey' , size = 2) + 
+  geom_line(aes(y = model.fit@fit$sigma*(F_inv), x = tiempo), colour = 'red') +
+  geom_line(aes(y = arch.fit@fit$sigma*(F_inv), x = tiempo), colour = 'blue', alpha = 0.25) +
+  geom_line(aes(y = fit.garch.n@fit$sigma*(F_inv), x = tiempo), colour = 'blue4') +
+  geom_hline(yintercept = sd(logret)*qnorm(0.05) , colour = 'darkgreen') + theme_light() + 
+  labs(x = '' , y = 'Daily Returns' , title = 'Value at Risk Comparison')
+
+```
+
 
 ### Forecasting with GARCH(1,1)
 
