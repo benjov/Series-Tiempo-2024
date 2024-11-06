@@ -1,7 +1,7 @@
 ---
 title: "Modelo Dif-in-Dif para el INPC de análsis clínicos (update nov-2022)"
 author: "Benjamín Oliva"
-date: "23/11/2023"
+date: "05/11/2024"
 output: html_document
 editor_options: 
   chunk_output_type: inline
