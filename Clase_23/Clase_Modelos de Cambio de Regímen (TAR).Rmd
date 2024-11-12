@@ -1,7 +1,7 @@
 ---
 title: "Clase 23. Modelos de Cambio de Regímen (TAR)"
 author: "Benjamin Oliva & Omar Alfaro-Rivera"
-date: "30/11/2021"
+date: "12/11/2024"
 output: html_document
 editor_options: 
   chunk_output_type: inline
@@ -58,7 +58,31 @@ plot(D_flu, type="b", col = "darkred", ylab = "",
 
 #?setar
 
-D_flu_tar4_05 <- setar(D_flu, m = 4, thDelay = 0, th = 0.05) 
+flu_tar4_05 <- setar(flu, m = 2, thDelay = 1, th = 0.3) 
+
+```
+
+```{r}
+
+summary(flu_tar4_05) 
+
+```
+
+```{r}
+
+plot(flu_tar4_05)
+
+```
+
+```{r}
+
+#?setar
+
+D_flu_tar4_05 <- setar(D_flu, m = 2, thDelay = 1, th = 0.05) 
+
+```
+
+```{r}
 
 summary(D_flu_tar4_05) 
 
@@ -74,10 +98,17 @@ plot(D_flu_tar4_05)
 
 ```{r}
 
-D_flu_tar4 <- setar(D_flu, m = 4, thDelay = 0)
+D_flu_tar4 <- setar(D_flu, m = 4, thDelay = 1)
+
+```
+
+```{r}
 
 summary(D_flu_tar4)
 
+```
+
+```{r}
 plot(D_flu_tar4)
 
 ```
