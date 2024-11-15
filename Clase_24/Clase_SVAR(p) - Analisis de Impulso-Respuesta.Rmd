@@ -1,0 +1,187 @@
+---
+title: "Clase 24. SVAR(p) - Analisis de Impulso-Respuesta"
+author: "Benjamin Oliva & Omar Alfaro-Rivera"
+date: "14/11/2024"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+### Dependencies and Setup
+```{r setup, include = FALSE, warning = FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#install.packages("ggplot2")
+#install.packages("dplyr")
+#install.packages(stats)
+#install.packages("MASS")
+#install.packages("strucchange")
+#install.packages("zoo")
+#install.packages("sandwich")
+#install.packages("urca")
+#install.packages("lmtest")
+#install.packages("vars")
+# 
+library(ggplot2)
+library(dplyr)
+library(stats)
+library(MASS)
+library(strucchange)
+library(zoo)
+library(sandwich)
+library(urca)
+library(lmtest)
+library(vars)
+
+```
+
+# Importamos Datos desde un archivo de R:
+
+Los datos "cargados" son los originales y los ajustados por estacionalidad. Los cuales son:
+
+* INPC: Indice Nacional de Precios al Consumidor (2QJul2018 = 100)
+
+* TC: Tipo de Cambio FIX 
+
+* CETE28: Tasa de rendimiento promedio mensual de los Cetes 28, en por ciento anual
+
+* IGAE: Indicador global de la actividad económica (2013 = 100)
+
+* IPI: Industrial Production Index (2012 = 100)
+
+```{r echo = FALSE}
+
+load("Datos_Ad.RData")
+
+head(Datos_Ad)
+
+```
+
+## Conversion a series de tiempo:
+
+```{r}
+
+DLINPC <- ts(log(Datos_Ad$INPC_Ad) - lag(log(Datos_Ad$INPC_Ad), 1), 
+             start = c(2000, 1), 
+             freq = 12)
+
+DLTC <- ts(log(Datos_Ad$TC_Ad) - lag(log(Datos_Ad$TC_Ad), 1), 
+           start = c(2000, 1), 
+           freq = 12)
+
+DLCETE28 <- ts(log(Datos_Ad$CETE28_Ad) - lag(log(Datos_Ad$CETE28_Ad), 1), 
+               start = c(2000, 1), 
+               freq = 12)
+
+DLIGAE <- ts(log(Datos_Ad$IGAE_Ad) - lag(log(Datos_Ad$IGAE_Ad), 1), 
+             start = c(2000, 1), 
+             freq = 12)
+
+```
+
+# Combinacion en un solo set de datos 
+
+```{r}
+
+Datos <- data.frame(cbind(DLINPC, DLIGAE, DLCETE28, DLTC))
+
+```
+
+```{r}
+
+Datos <- ts(Datos[2 : 282, ], 
+            start = c(2000, 2), freq = 12)
+```
+
+
+## VAR(p) Selection:
+
+```{r }
+
+VARselect(Datos, lag.max = 12, type = "const")
+
+```
+
+## VAR Estimacion:
+
+```{r }
+
+VAR_p <- VAR(Datos, p = 2, type = "const")
+
+summary(VAR_p)
+
+```
+
+### Create Restrictions Matrix:
+$\frac{K^2 - K}{2}$
+
+```{r }
+
+a.mat <- diag(4)
+
+diag(a.mat) <- NA
+
+a.mat[1, 2] <- NA
+a.mat[1, 3] <- NA
+a.mat[1, 4] <- NA
+a.mat[2, 3] <- NA
+a.mat[2, 4] <- NA
+a.mat[3, 4] <- NA
+
+a.mat
+
+```
+
+#### individual shocks
+
+```{r }
+
+b.mat <- diag(4)
+
+diag(b.mat) <- NA
+
+b.mat
+
+```
+
+
+### SVAR Estimation
+
+#### Basic:
+```{r }
+
+#?SVAR
+
+SVAR_p <- SVAR(VAR_p, Amat = a.mat, Bmat = b.mat, max.iter = 10000, hessian = TRUE)
+
+SVAR_p
+
+```
+
+#### Impulse response functions:
+
+```{r }
+
+#
+
+IR_DLINPC <- irf(SVAR_p, n.ahead = 12, boot = TRUE, 
+                 ci = 0.95, response = "DLINPC")
+
+plot(IR_DLINPC)
+
+```
+
+
+## Otras opciones del análisis impulso-respuesta
+
+```{r }
+
+IR_DLINPC_2 <- irf(SVAR_p, n.ahead = 12, boot = TRUE, 
+                   ci = 0.95, response = "DLINPC",
+                   ortho = TRUE, cumulative = FALSE)
+
+plot(IR_DLINPC_2)
+
+```
+
+
